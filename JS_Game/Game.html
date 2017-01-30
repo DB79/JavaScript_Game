@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang='en'>
+  <head>
+    <title>Penalty Game</title>
+    <meta charset='utf-8'>
+    <meta name='description' content=''>
+    <meta name='keywords' content=''>
+    <meta name='author' content=''>
+    <meta name='robots' content='all'>
+    
+  </head>
+  
+  <style>
+  div p{
+    width: 400px;
+    height: 30px;
+	font-familty: serif;
+	font-size:16px;
+    -webkit-animation: animateText 5s linear 2s 1 alternate; /* Chrome, Safari, Opera */
+    animation: animateText 50s linear 2s 1 alternate;
+	}
+
+	div{
+	position: absolute;
+	left: 810px;
+	top: 20px;
+	}
+	
+	div h2{
+	-webkit-animation: animateText 5s linear 2s 1 alternate; /* Chrome, Safari, Opera */
+    animation: animateText 50s linear 2s 1 alternate;
+	}
+
+/* Chrome, Safari, Opera */
+@-webkit-keyframes animateText {
+    0%   {opacity:1;}
+	50%  {opacity:0.5;}
+    65% {opacity:0;}
+}
+
+/* Standard syntax */
+@keyframes animateText {
+    0%   {opacity:1;}
+	50%  {opacity:0.5;}
+    65% {opacity:0;}
+}
+
+  
+  
+  </style>
+  <body>
+  
+  
+
+  <canvas id="screen" width="800" height="600">
+  </canvas>
+  <div>
+  <h2>How to play -</h2> 
+  <p>
+  <strong>Penalty Taker:</strong> Click on screen to shoot.<br>
+  <strong>Goalkeeper:</strong> use left/right arrows to move. Press enter when ready.</p>
+  </div>
+  
+ 
+    <script>
+    canvas = document.getElementById('screen');
+	canvasContext = canvas.getContext('2d');
+
+	
+	
+	var ballStartX = 340;
+	var ballStartY = 450;
+    var numAttempts=0;
+    var goals=0;
+	var saves=0;
+	var score=0;
+
+	const keeperMove = 10;	
+	const keeperStartX = 280;
+	const keeperStartY = 100;
+    var keeperX = keeperStartX;
+    var keeperY = keeperStartY;	
+    	
+    const postStart = 50;
+
+	
+	
+    var keeper = new Image();
+    keeper.src = "images/keeper.png";
+    
+    var goalpost = new Image();
+    goalpost.src = "images/goalpost.png";
+	
+	var ball = new Image();
+	ball.src = "images/ball.png";
+	
+	var opening = new Image();
+	opening.src = "images/openingScreen.jpg";
+	
+	//point to file
+	var  success = new Audio('audio/goalScored.wav')
+	
+	var music = new Audio('audio/music.mp4');
+	
+	var fail = new Audio('audio/failure.mp3');
+	
+	var gameover = new Audio('audio/gameover.wav');
+    
+	
+    window.onload = function(){
+
+	canvasContext.font="26px Arial";
+	canvasContext.fillStyle = "white";
+	
+	canvasContext.fillStyle = 'green';
+	canvasContext.fillRect(0,0,canvas.width,600);
+	
+
+	canvasContext.drawImage(opening,0,0,canvas.width,canvas.height);
+    canvasContext.fillText("Clcik to Start",0,0);
+	//when player clicks on screen the game will start
+	canvas.addEventListener('mousedown', startGame);
+	}
+	
+	function displayScore(){
+		
+		music.pause();
+		gameover.play();
+		canvasContext.fillStyle = 'green';
+		canvasContext.fillRect(0,0,canvas.width,canvas.height);
+		
+		canvasContext.fillStyle = "white";
+		canvasContext.fillText("Game Over:", 300,100);
+		
+		canvasContext.fillText("You Scored: " + score  +"/10", 300,130);
+		canvasContext.fillText("Goals: " + goals,300,180);
+		canvasContext.fillText("Saves: " + saves,300,210);
+		canvasContext.fillText("Clcik to Continue", 300,240);
+		
+		canvas.addEventListener('click',reloadGame);
+		
+	
+	}
+	
+	function reloadGame(){
+		window.location.reload();
+	}
+	
+    function startGame(){
+	
+	music.play();
+	 
+	canvas.removeEventListener('mousedown', startGame);
+	draw();
+    drawBall(ballStartX,ballStartY);
+    canvasContext.drawImage(keeper,keeperX,keeperY,250,300);
+	
+	setTimeout(function(){
+	canvas.addEventListener('click',play);
+    },500);
+	
+	}
+	
+	function reset(){
+		
+		keeperX = keeperStartX;
+		keeperY = keeperStartY
+		draw();
+		drawBall(ballStartX,ballStartY);
+		
+		
+		if(numAttempts < 5){
+			
+			canvas.addEventListener('click',play);
+			
+			
+		}
+		else if(numAttempts < 10)
+		{
+			canvas.removeEventListener('click',play);
+			playAsGoalKeeper();
+		}
+		else{
+			displayScore();
+		}
+		
+		
+		
+		
+	}
+			
+	
+
+    function draw(){
+	
+	
+	
+    canvasContext.fillStyle = 'green';
+    canvasContext.fillRect(0,0,canvas.width,canvas.height);
+	
+	canvasContext.drawImage(goalpost,50,20,700,300);    
+	
+	canvasContext.font="26px Arial";
+	canvasContext.fillStyle = "white";
+	
+	score = goals + saves;
+	
+	if(numAttempts<5){
+	canvasContext.fillText("Taking Penalty.",60,550);
+	}
+	else{
+	canvasContext.fillText("Playing as goalkeeper",60,550);
+	
+	}
+    canvasContext.fillText("Score: " + score,600,520);
+    canvasContext.fillText("Attempts: " + numAttempts,600,550);
+	
+    }
+        
+    function drawKeeper(keeperX,keeperY){
+	draw();
+    canvasContext.drawImage(keeper,keeperX,keeperY,250,300);
+	}
+	
+	function drawBall(x,y){
+	draw();
+	drawKeeper(keeperX,keeperY);
+	canvasContext.drawImage(ball,x,y,100,100);
+    }
+       
+	   
+	function randomNumber(){
+		var x;
+		
+		//determines where AI goalkeeper dives. Player has 5/6 chance of scoring.
+		if(numAttempts<= 5){
+		x = Math.floor(Math.random() * 6);
+		}
+		//determines where AI player shoots. Player has 1/3 chance of saving.
+		else{
+		x= Math.floor(Math.random() * 3);
+		}
+		return x;
+	}
+    
+	function play(evt) {
+	canvas.removeEventListener('click',play);
+	
+	numAttempts++;
+	//alert(numAttempts);
+	var keeperPosition = randomNumber();
+	
+	if(numAttempts <=5 ){
+		
+	var rect = canvas.getBoundingClientRect();
+	var root = document.documentElement;
+	var mouseX = evt.clientX - rect.left - root.scrollLeft;
+	var mouseY = evt.clientY- rect.top - root.scrollTop;
+	
+	var	x = mouseX-50;
+	var y = mouseY-50;
+
+	//The ball is over,under or wide of the goals
+	if(x <= 75 || x >  635 || y <= 25 || y > 260){
+		fail.play();
+		drawBall(x,y);
+		canvasContext.fillText("MISS!",350,450);
+		
+	}
+		
+	else{
+	
+	var shotPosition = getPosition(x,y);
+	
+	
+	//the keeper has dived to the same position as the mouse click 
+	if(keeperPosition == shotPosition)
+	{
+		keeperX = mouseX-115;
+		keeperY = mouseY-100;
+		fail.play();
+		drawKeeper(keeperX,keeperY);
+		drawBall(x,y);
+		canvasContext.fillText("SAVED!",350,450);
+		canvas.removeEventListener('click',play);
+
+		
+	}
+	else{
+	// the player has scored a goal
+	// keeper moves to another position in goals
+	
+	
+	
+	var keeperDiveX;
+	var keeperDiveY;
+	
+	switch(shotPosition){
+		
+		case 0: //if player shoots to left,keeper moves to right
+		case 3: //if player shoots to left,keeper moves to right
+		case 1: //if player shoots down the middle,keeper moves to right
+		case 4: //if player shoots down the middle,keeper moves to right
+				keeperDiveX=500;
+				keeperDiveY=100;
+				break;
+		case 2: //if player shoots to right,keeper moves to left
+		case 5: //if player shoots to right,keeper moves to left
+				keeperDiveX=100;
+				keeperDiveY=100;
+				break;
+	}
+	success.play();
+	// increase number of goals scored
+	goals++;
+	
+	//set the keeper dive position to the positions created above
+	keeperX = keeperDiveX;
+	keeperY = keeperDiveY;
+	drawBall(x,y);
+	canvasContext.fillText("GOAL!!!!",350,450);
+	
+	
+	
+	
+	}
+	
+	}
+		 
+	}
+	
+	
+	setTimeout(function(){
+			reset();
+		},5000);
+	}
+	
+   
+	
+	function playAsGoalKeeper(){
+	
+	
+	//remove the listener for shooting on click
+	canvas.removeEventListener('click',play);
+	
+	document.addEventListener('keydown', moveKeeper);
+	
+	}
+	
+	function moveKeeper(event) {
+	
+	// get value for the key pressed by the player,who is now playing as goalkeeper
+    var key = event.which;
+	var playerKeeperPosition;
+
+    switch (key) {
+        case 37:
+			
+            // left key
+			keeperX = keeperX-keeperMove;
+			drawKeeper(keeperX,keeperY);
+			drawBall(ballStartX,ballStartY);
+			playerKeeperPosition = getPosition(keeperX,keeperY);
+			break;
+
+        case 39:
+            // right key
+			keeperX = keeperX+keeperMove;
+			drawKeeper(keeperX,keeperY);
+			drawBall(ballStartX,ballStartY);
+			playerKeeperPosition = getPosition(keeperX,keeperY);
+			break;
+
+		case 13://enter button
+		
+			playerKeeperPosition = getPosition(keeperX,keeperY);
+			numAttempts++;
+			AIShoot(playerKeeperPosition);
+			document.removeEventListener('keydown', moveKeeper);
+			setTimeout(function(){reset();},5000);
+			break;
+			
+		default:
+            break;
+    }
+	}
+	
+	function AIShoot(playerKeeperPosition){
+		
+		var AIShotPosition = randomNumber();
+		
+		//if saved draw ball in keepers position
+		if(AIShotPosition == playerKeeperPosition){
+			success.play();
+			drawBall(keeperX+75,keeperY+50);
+			saves++;
+		}
+		// if keeper is at left side, ball will go to right side
+		else if (playerKeeperPosition == 0){
+			fail.play();
+			drawBall(550,150);
+		}
+		// if keeper is at right or middle, ball will go the left
+		else if((playerKeeperPosition == 1)|| (playerKeeperPosition == 2)){
+			fail.play();
+			drawBall(150,150);
+			
+		
+		}
+		}
+		
+	
+	
+	function getPosition(x,y){
+	/*
+	//  Assign the ball position a number depending on where the mouse was clicked.
+	//	The goal is divided into 6 sections
+	//	0 1 2
+	//  3 4 5
+	//	Depending where the mouse is clicked the position will be assigned a number.
+	//  This number is then returned
+	*/
+	
+	var position;
+	//left side
+	if(x>75 && x<261){
+		if(y>25 &&y<135)
+			position = 0;//top left
+		else
+			position = 3;//bottom left
+	
+	}
+	//middle
+	else if(x>=261 && x<448){
+		if(y>25 && y<135)
+			position = 1; //top middle
+		else
+			position = 4; //bottom middle
+		
+	}
+	//right side
+	else{
+		if(y>25 && y<135)
+			position = 2; //top right
+		else
+			position = 5; //bottom right
+		
+	}
+	
+	return position;
+	
+	}
+
+	</script>
+        
+  
+
+  </body>
+</html>
